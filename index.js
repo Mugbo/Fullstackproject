@@ -1,13 +1,13 @@
 //import npm packages
-const Express = require("express");
+const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
 
 //create instance of express app and make it use cors module
-var app = Express();
+const app = express();
 app.use(cors());
-
+app.use(express.json())
 // {Connor} Add connection string for mongoDB
 mongoose.connect("mongodb://localhost:27017/LibraryDB")
 .then(() => {
@@ -19,39 +19,44 @@ mongoose.connect("mongodb://localhost:27017/LibraryDB")
 
   
 const LibrarySchema = new mongoose.Schema({
-    id: { type: String, required: true },
-    description: { type: String, required: true }
+    book: { type: String, required: true }
   });
   
 const LibraryCollection  = mongoose.model("LibraryCollection", LibrarySchema);
 module.exports= LibraryCollection
 
+
+app.get("/GetBook",(req, res) => {
+        LibraryCollection.find()
+        .then(result => res.json(result))
+        .catch(err => res.json(err))
+    })
+
+app.delete("/DeleteBook/:id",(req, res) => {
+    const {id} = req.params;
+    LibraryCollection.deleteOne({_id: id})
+    .then(result => res.json(result))
+    .catch(err => res.json(err))
+})
+
+
+app.put("/UpdateBook/:id",(req, res) => {
+    const {id} = req.params;
+    LibraryCollection.findByIdAndUpdate({_id: id})
+    .then(result => res.json(result))
+    .catch(err => res.json(err))
+})
+
+
+app.post('/AddBook', (req, res) => {
+   const book = req.body.book;
+   LibraryCollection.create({
+    book: book
+   }).then(result => res.json(result))
+   .catch(err => res.json(err))
+})
+
 //start express app and listen to requests from port number
 app.listen(5001, () => {
-  console.log("Mongo BD Connection Successful");
-});
-
-app.get("/GetBook", async(req, res) => {
-        const books = await LibraryCollection.find({});
-      res.send(books);
-    });
-
-
-app.post('/AddBook', multer().none(),(req, res) => {
-    database.collection("LibraryCollection").count({},function(error, numOfBooks){
-        database.collection("LibraryCollection").insertOne({
-            id:(numOfBooks+1).toString(),
-            description:req.body.newBooks
-        });
-        
-        res.json("Added Successfully");
-    })
-})
-
-app.delete('/DeleteBook' ,(req, res) =>{
-    database.collection("LibraryCollection").deleteOne({
-        id:req.query.id
-    })
-    res.json("Delete Successfully");
-})
-
+    console.log("Mongo BD Connection Successful");
+  });
